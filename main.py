@@ -8,6 +8,7 @@ from image_recog_service import predict
 import pyfiglet
 import requests
 
+
 global_init()
 
 
@@ -21,12 +22,15 @@ def save_to_db(db_object, result_to_save):
     db_object.results.append(result_obj)
     db_object.save()
 
+
 def update_state(file):
     payload = {
         'topic_name': globals.RECEIVE_TOPIC,
-        'client_id': '151515',
+        'client_id': globals.CLIENT_ID,
         'value': file
     }
+    requests.request("POST", globals.DASHBOARD_URL,  data=payload)
+
 
 if __name__ == "__main__":
     print(pyfiglet.figlet_format(str(globals.RECEIVE_TOPIC)))
@@ -55,6 +59,7 @@ if __name__ == "__main__":
                 to_save.append(image_results)
             save_to_db(db_object, to_save)
             print(".....................FINISHED PROCESSING FILE.....................")
+            update_state(file_name)
 
         else:
             """image"""
@@ -64,3 +69,4 @@ if __name__ == "__main__":
             to_save = [image_results]
             save_to_db(db_object, to_save)
             print(".....................FINISHED PROCESSING FILE.....................")
+            update_state(file_name)

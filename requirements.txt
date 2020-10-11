@@ -4,3 +4,4 @@ python-dotenv
 kafka-python
 mongoengine
 pyfiglet
+requests
