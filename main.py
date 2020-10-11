@@ -13,14 +13,13 @@ global_init()
 
 
 def save_to_db(db_object, result_to_save):
-    print("in save")
-    print(db_object)
-    print(db_object.id)
+    print("*****************SAVING TO DB******************************")
     result_obj = Result()
     result_obj.results = result_to_save
     result_obj.model_name = globals.RECEIVE_TOPIC
     db_object.results.append(result_obj)
     db_object.save()
+    print("*****************SAVED TO DB******************************")
 
 
 def update_state(file):
@@ -46,8 +45,8 @@ if __name__ == "__main__":
         print("########## PROCESSING FILE " + file_name)
         print("#############################################")
         if db_object.is_doc_type:
+            """document"""
             if db_object.contains_images:
-                """document"""
                 images_array = []
                 for image in db_object.files:
                     pdf_image = str(uuid.uuid4()) + ".jpg"
