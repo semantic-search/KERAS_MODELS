@@ -1,0 +1,6 @@
+pillow
+redis
+python-dotenv
+kafka-python
+mongoengine
+pyfiglet
