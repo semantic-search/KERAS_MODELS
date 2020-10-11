@@ -46,20 +46,23 @@ if __name__ == "__main__":
         print("########## PROCESSING FILE " + file_name)
         print("#############################################")
         if db_object.is_doc_type:
-            """document"""
-            images_array = []
-            for image in db_object.files:
-                pdf_image = str(uuid.uuid4()) + ".jpg"
-                with open(pdf_image, 'wb') as file_to_save:
-                    file_to_save.write(image.file.read())
-                images_array.append(pdf_image)
-            to_save = list()
-            for image in images_array:
-                image_results = predict(image)
-                to_save.append(image_results)
-            save_to_db(db_object, to_save)
-            print(".....................FINISHED PROCESSING FILE.....................")
-            update_state(file_name)
+            if db_object.contains_images:
+                """document"""
+                images_array = []
+                for image in db_object.files:
+                    pdf_image = str(uuid.uuid4()) + ".jpg"
+                    with open(pdf_image, 'wb') as file_to_save:
+                        file_to_save.write(image.file.read())
+                    images_array.append(pdf_image)
+                to_save = list()
+                for image in images_array:
+                    image_results = predict(image)
+                    to_save.append(image_results)
+                save_to_db(db_object, to_save)
+                print(".....................FINISHED PROCESSING FILE.....................")
+                update_state(file_name)
+            else:
+                pass
 
         else:
             """image"""

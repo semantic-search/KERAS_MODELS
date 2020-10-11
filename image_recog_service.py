@@ -179,6 +179,7 @@ mobilenet_v2_model = tf.keras.applications.MobileNetV2(
     classes=1000,
     classifier_activation="softmax"
 )
+print("**********************mobilenetv2*********************************************")
 print("########### FINISHED LOADING MODELS ###########")
 print("*******************************************************************")
 print("*******************************************************************")
