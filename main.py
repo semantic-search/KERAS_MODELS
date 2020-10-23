@@ -1,26 +1,22 @@
+import json
 from db_models.mongo_setup import global_init
 from db_models.models.cache_model import Cache
-from db_models.models.result_model import Result
 import uuid
 import globals
 import init
-from image_recog_service import predict
+from scene_recog_service import predict
 import pyfiglet
 import requests
 
-
 global_init()
 
-
-def save_to_db(db_object, result_to_save):
-    print("*****************SAVING TO DB******************************")
-    result_obj = Result()
-    result_obj.results = result_to_save
-    result_obj.model_name = globals.RECEIVE_TOPIC
-    db_object.results.append(result_obj)
+def save_to_db(db_object, labels, scores):
+    print("in save")
+    print(db_object)
+    print(db_object.id)
+    db_object.labels = labels
+    db_object.scores = scores
     db_object.save()
-    print("*****************SAVED TO DB******************************")
-
 
 def update_state(file):
     payload = {
@@ -28,19 +24,30 @@ def update_state(file):
         'client_id': globals.CLIENT_ID,
         'value': file
     }
-    requests.request("POST", globals.DASHBOARD_URL,  data=payload)
+
+    try:
+        requests.request("POST", globals.DASHBOARD_URL,  data=payload)
+    except:
+        print("EXCEPTION IN UPDATE STATE API CALL......")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     print(pyfiglet.figlet_format(str(globals.RECEIVE_TOPIC)))
     print(pyfiglet.figlet_format("INDEXING CONTAINER"))
     print("Connected to Kafka at " + globals.KAFKA_HOSTNAME + ":" + globals.KAFKA_PORT)
     print("Kafka Consumer topic for this Container is " + globals.RECEIVE_TOPIC)
     for message in init.consumer_obj:
+        global_init()
         message = message.value
         db_key = str(message)
-        db_object = Cache.objects.get(pk=db_key)
+        print(db_key, 'db_key')
+        try:
+            db_object = Cache.objects.get(pk=db_key)
+        except:
+            print("EXCEPTION IN GET PK... continue")
+            continue
         file_name = db_object.file_name
+        # init.redis_obj.set(globals.RECEIVE_TOPIC, file_name)
         print("#############################################")
         print("########## PROCESSING FILE " + file_name)
         print("#############################################")
@@ -53,22 +60,40 @@ if __name__ == "__main__":
                     with open(pdf_image, 'wb') as file_to_save:
                         file_to_save.write(image.file.read())
                     images_array.append(pdf_image)
-                to_save = list()
+                to_save  = []
+                final_labels=db_object.labels
+                final_scores=db_object.scores
                 for image in images_array:
-                    image_results = predict(image)
-                    to_save.append(image_results)
-                save_to_db(db_object, to_save)
+
+                    try:
+                        response = predict(file_name=image)
+                    except:
+                        print("ERROR IN PREDICT")
+                        continue
+                    # final_labels.extend(response["labels"])
+                    for label,score in zip(response["labels"],response['scores']):
+                        if label not in final_labels:
+                            final_labels.append(label.strip())
+                            final_scores.append(score)
+                        else:
+                            x = final_labels.index(label)
+                            score_to_check = final_scores[x]
+                            if score > score_to_check:
+                                final_scores[x] = score
+
+
+                save_to_db(db_object,final_labels,final_scores)
                 print(".....................FINISHED PROCESSING FILE.....................")
                 update_state(file_name)
-            else:
-                pass
 
         else:
             """image"""
+
             with open(file_name, 'wb') as file_to_save:
                 file_to_save.write(db_object.file.read())
-            image_results = predict(file_name)
-            to_save = [image_results]
-            save_to_db(db_object, to_save)
+            image_result = predict(file_name)
+            labels=image_result['labels']
+            scores=image_result['scores']
+            save_to_db(db_object,labels,scores)
             print(".....................FINISHED PROCESSING FILE.....................")
             update_state(file_name)
