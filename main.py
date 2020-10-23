@@ -4,7 +4,7 @@ from db_models.models.cache_model import Cache
 import uuid
 import globals
 import init
-from scene_recog_service import predict
+from image_recog_service import predict
 import pyfiglet
 import requests
 
